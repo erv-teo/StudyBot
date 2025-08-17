@@ -4,15 +4,15 @@ import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
-ALLOWED_USERS = {2129926947}
+ALLOWED_USERS = {}
 
 def restricted(func):
-    def wrapper(update, context, *args, **kwargs):
+    async def wrapper(update, context, *args, **kwargs):
         user_id = update.effective_user.id
         if user_id not in ALLOWED_USERS:
-            update.message.reply_text("You are not authorized to use this bot.")
+            await update.message.reply_text("You are not authorized to use this bot.")
             return
-        return func(update, context, *args, **kwargs)
+        return await func(update, context, *args, **kwargs)
     return wrapper
 
 @restricted
