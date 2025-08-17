@@ -4,7 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
-ALLOWED_USERS = {}
+ALLOWED_USERS = {2129926947, 1336396327}
 
 def restricted(func):
     async def wrapper(update, context, *args, **kwargs):
