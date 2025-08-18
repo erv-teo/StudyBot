@@ -1,3 +1,6 @@
 logging
 beautifulsoup4
 lxml
+pyTelegramBotAPI
+python-dotenv
+python-telegram-bot
