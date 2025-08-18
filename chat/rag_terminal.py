@@ -3,7 +3,7 @@
 Terminal RAG interface - upload documents and ask questions about them.
 
 Usage:
-    python rag_terminal.py [--provider openai|anthropic|ollama] [--model MODEL_NAME]
+    python rag_terminal.py [--provider openai|anthropic|ollama|google] [--model MODEL_NAME]
 
 Features:
     - Upload documents (PDF, Word, Text, Web URLs)
@@ -46,11 +46,11 @@ logger = structlog.get_logger(__name__)
 class RAGTerminal:
     """Terminal interface for RAG system."""
     
-    def __init__(self, provider_type: str = "openai", model_name: str = None):
-        self.provider_type = provider_type
+    def __init__(self, provider_type: str = None, model_name: str = None):
+        self.config = get_config()
+        self.provider_type = provider_type or self.config.llm.provider
         self.model_name = model_name
         self.rag_pipeline = None
-        self.config = get_config()
         
     def initialize(self):
         """Initialize the RAG pipeline."""
@@ -302,8 +302,8 @@ class RAGTerminal:
 def main():
     """Main function."""
     parser = argparse.ArgumentParser(description="Terminal RAG interface for StudyBot")
-    parser.add_argument("--provider", choices=["openai", "anthropic", "ollama"], 
-                       default="openai", help="LLM provider to use")
+    parser.add_argument("--provider", choices=["openai", "anthropic", "ollama", "google"], 
+                       default=None, help="LLM provider to use (defaults to .env setting)")
     parser.add_argument("--model", help="Model name to use")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     
@@ -314,8 +314,12 @@ def main():
         import logging
         logging.getLogger().setLevel(logging.DEBUG)
     
+    # Get config to determine default provider
+    config = get_config()
+    provider = args.provider or config.llm.provider
+    
     # Create and run RAG interface
-    rag = RAGTerminal(provider_type=args.provider, model_name=args.model)
+    rag = RAGTerminal(provider_type=provider, model_name=args.model)
     rag.run()
 
 
