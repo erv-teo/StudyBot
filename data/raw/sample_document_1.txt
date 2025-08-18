@@ -1,0 +1,50 @@
+StudyBot Documentation
+
+StudyBot is an advanced RAG (Retrieval Augmented Generation) system designed for question-answering based on document collections.
+
+the author's name is weehung and ervin.
+
+Features:
+- Document ingestion from multiple formats (PDF, Word, Text, Web pages)
+- Advanced text chunking and embedding
+- Vector database storage with similarity search
+- Multiple LLM provider support (OpenAI, Anthropic, Ollama)
+- Telegram bot integration
+- Modular architecture for easy customization
+
+Architecture:
+The system consists of several key components:
+
+1. Document Ingestion Module
+   - Supports PDF, Word, Text, and web page loading
+   - Automatic content extraction and cleaning
+   - Metadata preservation and enhancement
+
+2. Chunking and Embedding Module
+   - Recursive text splitting for optimal chunk size
+   - Multiple embedding providers (SentenceTransformers, OpenAI)
+   - Section-based metadata enhancement
+
+3. Vector Database Module
+   - Support for Chroma, FAISS, and in-memory stores
+   - Similarity search with filtering
+   - Persistent storage capabilities
+
+4. LLM Generation Module
+   - Support for OpenAI GPT models
+   - Anthropic Claude integration
+   - Local model support via Ollama
+   - Context-aware response generation
+
+5. RAG Pipeline
+   - Orchestrates all components
+   - Document-to-vector workflow
+   - Query-retrieve-generate pipeline
+
+Usage Examples:
+- Upload a PDF research paper and ask questions about methodology
+- Add company documentation and query policies
+- Process meeting transcripts and extract action items
+- Analyze legal documents and find relevant clauses
+
+The system is designed to be scalable and can handle large document collections while maintaining fast query response times.

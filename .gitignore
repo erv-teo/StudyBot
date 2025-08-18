@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# StudyBot specific
+# Vector database files (ChromaDB, FAISS indexes)
+data/vectorstore/
+*.faiss
+*.pkl
+
+# Raw data except sample_document_1.txt
+data/raw/*
+!data/raw/sample_document_1.txt
