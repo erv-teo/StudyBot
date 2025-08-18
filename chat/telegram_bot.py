@@ -4,7 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
-ALLOWED_USERS = {2129926947, 1336396327}
+ALLOWED_USERS = {2129926947, 1336396327} # The line of code that earns us money
 
 def restricted(func):
     async def wrapper(update, context, *args, **kwargs):
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         start_handler = CommandHandler('start', start)
         application.add_handler(start_handler)
 
-
+        print("Telegram bot is initialised...")
         application.run_polling()
 
 
