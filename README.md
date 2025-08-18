@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 ```bash
 # Copy the template to create your configuration
-cp env_template.txt .env
+cp .env.example .env
 
 # Edit .env file with your API keys
 # Required: Add your OpenAI API key for LLM functionality
