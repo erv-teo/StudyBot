@@ -1,3 +1,4 @@
+
 # Core LangChain dependencies
 langchain==0.2.16
 langchain-community==0.2.16
@@ -23,6 +24,7 @@ beautifulsoup4==4.12.3
 pypdf==4.3.1
 python-docx==1.1.2
 python-pptx==0.6.23
+lxml
 
 # Telegram bot
 python-telegram-bot==21.5
@@ -44,6 +46,7 @@ flake8==7.1.1
 
 # Logging and monitoring
 structlog==24.4.0
+logging
 
 # File handling
 aiofiles==24.1.0

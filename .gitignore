@@ -215,3 +215,4 @@ data/vectorstore/
 # Raw data except sample_document_1.txt
 data/raw/*
 !data/raw/sample_document_1.txt
+data/

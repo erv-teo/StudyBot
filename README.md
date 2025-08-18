@@ -180,3 +180,4 @@ StudyBot/
 - Python 3.9+
 - OpenAI API key (for GPT models) or other LLM provider
 - ~500MB for sentence-transformer models (downloaded automatically)
+
