@@ -39,8 +39,6 @@ export function useDocuments() {
       setLoading(true);
       setError(null);
       const data = await apiClient.getDocuments();
-
-      console.log('data', data);
       
       setDocuments(data.documents);
     } catch (err) {
