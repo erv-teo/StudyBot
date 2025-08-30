@@ -48,6 +48,10 @@ flake8==7.1.1
 # Logging and monitoring
 structlog==24.4.0
 
+# FastAPI and web framework
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+python-multipart==0.0.20
 
 # File handling
 aiofiles==24.1.0
