@@ -108,11 +108,13 @@ export function DocumentsTable() {
 
 interface DocumentCardProps {
   document: {
+    doc_id: string;
     source: string;
+    original_filename?: string;
     chunks_count: number;
     total_chars: number;
-    doc_id?: string;
     content_type: string;
+    created_at: string;
   };
   isExpanded: boolean;
   onToggle: () => void;
@@ -120,7 +122,7 @@ interface DocumentCardProps {
 }
 
 function DocumentCard({ document, isExpanded, onToggle, onChunkClick }: DocumentCardProps) {
-  const { chunks, loading, error } = useDocumentChunks(document.source);
+  const { chunks, loading, error } = useDocumentChunks(document.doc_id);
 
   return (
     <Card shadow="sm" radius="md" withBorder>
@@ -129,7 +131,7 @@ function DocumentCard({ document, isExpanded, onToggle, onChunkClick }: Document
           <IconFileText size={20} color="#6c757d" />
           <div>
             <Text fw={500} style={{ maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {document.source}
+              {document.original_filename || document.source}
             </Text>
             <Text size="sm" c="dimmed">
               {document.chunks_count} chunks • {document.total_chars.toLocaleString()} chars

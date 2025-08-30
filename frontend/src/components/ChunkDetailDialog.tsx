@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, Button, Textarea, Text, Group, Stack, SimpleGrid, Alert, Code } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { Modal, Button, Textarea, Text, Group, Stack, SimpleGrid, Alert, Code, Divider } from '@mantine/core';
 import { Chunk, ChunkUpdateRequest } from '../lib/api';
 import { apiClient } from '../lib/api';
 import { IconEdit, IconDeviceFloppy, IconX, IconAlertCircle } from '@tabler/icons-react';
@@ -18,13 +18,13 @@ export function ChunkDetailDialog({ chunk, opened, onClose, onChunkUpdated }: Ch
   const [error, setError] = useState<string | null>(null);
 
   // Reset form when chunk changes
-  useState(() => {
+  useEffect(() => {
     if (chunk) {
       setContent(chunk.content);
       setIsEditing(false);
       setError(null);
     }
-  });
+  }, [chunk]);
 
   const handleSave = async () => {
     if (!chunk) return;
@@ -72,33 +72,11 @@ export function ChunkDetailDialog({ chunk, opened, onClose, onChunkUpdated }: Ch
       title={
         <Group justify="space-between" w="100%">
           <Text fw={500}>Chunk Details</Text>
-          <Group>
-            {!isEditing ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                disabled={loading}
-                leftSection={<IconEdit size={16} />}
-              >
-                Edit
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(false)}
-                disabled={loading}
-                leftSection={<IconX size={16} />}
-              >
-                Cancel
-              </Button>
-            )}
-          </Group>
         </Group>
       }
       size="xl"
     >
+      <Divider mb="md"/>
       <Stack gap="md">
         {error && (
           <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red">
@@ -113,11 +91,11 @@ export function ChunkDetailDialog({ chunk, opened, onClose, onChunkUpdated }: Ch
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Enter chunk content..."
-              minRows={8}
+              rows={8}
               disabled={loading}
             />
           ) : (
-            <Code block style={{ maxHeight: '300px', overflow: 'auto' }}>
+            <Code block style={{ maxHeight: '200px', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
               {chunk.content}
             </Code>
           )}
@@ -143,7 +121,32 @@ export function ChunkDetailDialog({ chunk, opened, onClose, onChunkUpdated }: Ch
           </div>
         </SimpleGrid>
 
+        
+
         <Group justify="flex-end" mt="md">
+        <Group>
+            {!isEditing ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                disabled={loading}
+                leftSection={<IconEdit size={16} />}
+              >
+                Edit
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+                disabled={loading}
+                leftSection={<IconX size={16} />}
+              >
+                Cancel
+              </Button>
+            )}
+          </Group>
           <Button
             variant="outline"
             color="red"

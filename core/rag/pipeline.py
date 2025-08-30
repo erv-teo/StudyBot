@@ -28,7 +28,8 @@ class RAGPipeline:
                  llm_manager: Optional[LLMManager] = None,
                  document_processor: Optional[DocumentProcessor] = None,
                  chunk_processor: Optional[ChunkProcessor] = None,
-                 text_splitter: Optional = None):
+                 text_splitter: Optional = None,
+                 document_store: Optional = None):
         """
         Initialize RAG pipeline with pre-initialized components.
         
@@ -49,6 +50,7 @@ class RAGPipeline:
         self._document_processor = document_processor
         self._chunk_processor = chunk_processor
         self._text_splitter = text_splitter
+        self._document_store = document_store
         
         # Track initialization
         self._initialized = self._check_initialization()
@@ -65,7 +67,8 @@ class RAGPipeline:
             self._llm_manager,
             self._document_processor,
             self._chunk_processor,
-            self._text_splitter
+            self._text_splitter,
+            self._document_store
         ]
         return all(component is not None for component in required_components)
     
@@ -89,6 +92,17 @@ class RAGPipeline:
             
             self.logger.info("Adding document to knowledge base", source=source)
             
+            # Create document record
+            original_filename = metadata.get('original_filename') if metadata else None
+            content_type = metadata.get('content_type') if metadata else None
+            
+            doc_id = self._document_store.create_document(
+                source=source,
+                original_filename=original_filename,
+                content_type=content_type,
+                metadata=metadata
+            )
+            
             # Load document
             loader_factory = DocumentLoaderFactory()
             documents = loader_factory.load_document(source)
@@ -97,10 +111,13 @@ class RAGPipeline:
                 self.logger.warning("No documents loaded", source=source)
                 return False
             
-            # Process documents
-            if metadata:
-                for doc in documents:
-                    doc.metadata.update(metadata)
+            # Process documents and add document ID to metadata
+            if metadata is None:
+                metadata = {}
+            metadata['doc_id'] = doc_id
+            
+            for doc in documents:
+                doc.metadata.update(metadata)
             
             processed_docs = self._document_processor.process(documents, metadata)
             
@@ -111,16 +128,21 @@ class RAGPipeline:
             processed_chunks = self._chunk_processor.process_chunks(chunks)
             
             # Add to vector store
-            doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
+            vector_doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
+            
+            # Update document stats
+            total_chars = sum(len(chunk.page_content) for chunk in processed_chunks)
+            self._document_store.update_document_stats(doc_id, len(processed_chunks), total_chars)
             
             # Persist if supported
             self._vector_manager.vector_store.persist()
             
             self.logger.info(
                 "Successfully added document",
+                doc_id=doc_id,
                 source=source,
                 chunks=len(processed_chunks),
-                doc_ids=len(doc_ids)
+                vector_doc_ids=len(vector_doc_ids)
             )
             
             return True

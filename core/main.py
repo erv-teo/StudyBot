@@ -9,6 +9,7 @@ from typing import Dict, Any
 from .config.settings import get_config
 from .rag.pipeline import RAGPipeline
 from .vectorstore.chunk_manager import ChunkManager
+from .vectorstore.document_store import DocumentStore
 from .vectorstore import VectorStoreManager
 from .vectorstore.providers.factory import VectorStoreFactory
 from .chunking.embeddings.factory import EmbeddingProviderFactory
@@ -35,13 +36,14 @@ app.add_middleware(
 # Global instances (initialized at startup)
 rag_pipeline: RAGPipeline = None
 chunk_manager: ChunkManager = None
+document_store: DocumentStore = None
 config = None
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize all services on startup."""
-    global rag_pipeline, chunk_manager, config
+    global rag_pipeline, chunk_manager, document_store, config
     
     try:
         logger.info("Starting StudyBot RAG API...")
@@ -99,6 +101,10 @@ async def startup_event():
             chunk_overlap=config.chunking.chunk_overlap
         )
         
+        # Initialize document store
+        document_store = DocumentStore(persist_directory=config.vectorstore.persist_directory)
+        logger.info("Document store initialized")
+        
         # Initialize RAG pipeline with all components
         rag_pipeline = RAGPipeline(
             config=config,
@@ -106,7 +112,8 @@ async def startup_event():
             llm_manager=llm_manager,
             document_processor=document_processor,
             chunk_processor=chunk_processor,
-            text_splitter=text_splitter
+            text_splitter=text_splitter,
+            document_store=document_store
         )
         logger.info("RAG pipeline initialized with all components")
         

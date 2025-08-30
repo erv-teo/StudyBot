@@ -172,35 +172,29 @@ async def list_documents(
 ) -> DocumentListResponse:
     """List all ingested documents."""
     try:
-        # This would need to be implemented to track documents
-        # For now, return a placeholder response
-        # In a real implementation, you'd query the vector store for unique sources
+        from core.main import document_store
         
-        from core.main import chunk_manager
+        if not document_store:
+            raise HTTPException(status_code=503, detail="Document store not initialized")
         
-        if not chunk_manager:
-            raise HTTPException(status_code=503, detail="Chunk manager not initialized")
+        # Get documents from document store
+        documents_data = document_store.list_documents()
         
-        # Get all chunks and extract unique sources
-        all_chunks = chunk_manager.list_chunks(limit=1000)
-        
-        # Group by source
-        documents = {}
-        for chunk in all_chunks:
-            source = chunk.get('metadata', {}).get('source', 'unknown')
-            if source not in documents:
-                documents[source] = {
-                    'source': source,
-                    'chunks_count': 0,
-                    'total_chars': 0,
-                    'doc_id': chunk.get('metadata', {}).get('doc_id'),
-                    'content_type': chunk.get('metadata', {}).get('content_type', 'unknown')
-                }
-            documents[source]['chunks_count'] += 1
-            documents[source]['total_chars'] += len(chunk.get('content', ''))
+        # Convert to response format
+        documents = []
+        for doc in documents_data:
+            documents.append({
+                'doc_id': doc['doc_id'],
+                'source': doc['source'],
+                'original_filename': doc['original_filename'],
+                'chunks_count': doc['total_chunks'],
+                'total_chars': doc['total_chars'],
+                'content_type': doc['content_type'],
+                'created_at': doc['created_at']
+            })
         
         return DocumentListResponse(
-            documents=list(documents.values()),
+            documents=documents,
             total_count=len(documents)
         )
         

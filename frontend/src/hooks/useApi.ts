@@ -39,6 +39,9 @@ export function useDocuments() {
       setLoading(true);
       setError(null);
       const data = await apiClient.getDocuments();
+
+      console.log('data', data);
+      
       setDocuments(data.documents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch documents');
@@ -54,25 +57,25 @@ export function useDocuments() {
   return { documents, loading, error, refetch: fetchDocuments };
 }
 
-export function useDocumentChunks(source: string) {
+export function useDocumentChunks(docId: string) {
   const [chunks, setChunks] = useState<Chunk[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchChunks = useCallback(async () => {
-    if (!source) return;
+    if (!docId) return;
     
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.getDocumentChunks(source);
+      const data = await apiClient.getDocumentChunks(docId);
       setChunks(data.chunks);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch chunks');
     } finally {
       setLoading(false);
     }
-  }, [source]);
+  }, [docId]);
 
   useEffect(() => {
     fetchChunks();

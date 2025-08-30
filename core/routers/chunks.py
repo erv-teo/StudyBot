@@ -264,14 +264,15 @@ async def search_chunks(
         raise HTTPException(status_code=500, detail=f"Failed to search chunks: {str(e)}")
 
 
-@router.get("/document/{source}", response_model=ChunkListResponse)
+@router.get("/document/{doc_id}", response_model=ChunkListResponse)
 async def get_document_chunks(
-    source: str,
+    doc_id: str,
     manager = Depends(get_chunk_manager)
 ) -> ChunkListResponse:
-    """Get all chunks for a specific document."""
+    """Get all chunks for a specific document by document ID."""
     try:
-        chunks_data = manager.get_document_chunks(source)
+        # Get chunks by document ID
+        chunks_data = manager.list_chunks(doc_id_filter=doc_id, limit=1000)
         
         chunks = []
         for chunk_data in chunks_data:
@@ -287,9 +288,9 @@ async def get_document_chunks(
             chunks=chunks,
             total_count=len(chunks),
             limit=len(chunks),
-            source_filter=source
+            source_filter=doc_id
         )
         
     except Exception as e:
-        logger.error("Failed to get document chunks", source=source, error=str(e))
+        logger.error("Failed to get document chunks", doc_id=doc_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Failed to get document chunks: {str(e)}")
