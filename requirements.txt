@@ -58,3 +58,6 @@ aiofiles==24.1.0
 
 # Type hints
 typing-extensions==4.12.2
+
+# HTTP client for terminal interface
+requests==2.32.3

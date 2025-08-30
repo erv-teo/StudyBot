@@ -88,6 +88,9 @@ class StudyBotConfig(BaseSettings):
     anonymized_telemetry: str = Field(default="False", description="ChromaDB telemetry setting")
     chroma_telemetry: str = Field(default="False", description="ChromaDB telemetry setting")
     
+    # Backend API settings
+    backend_api_url: str = Field(default="http://localhost:8000", description="Backend API URL for client connections")
+    
     class Config:
         env_file = ".env"
         env_nested_delimiter = "__"

@@ -16,13 +16,15 @@ Features:
 
 import argparse
 import sys
+import os
+import requests
+import json
 from pathlib import Path
+from typing import Optional, Dict, Any
 
 # Add the project root to Python path  
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.rag import RAGPipeline
-from core.config.settings import get_config
 import structlog
 
 # Configure logging
@@ -44,44 +46,53 @@ logger = structlog.get_logger(__name__)
 
 
 class RAGTerminal:
-    """Terminal interface for RAG system."""
+    """Terminal interface for RAG system using FastAPI backend."""
     
-    def __init__(self, provider_type: str = None, model_name: str = None):
-        self.config = get_config()
-        self.provider_type = provider_type or self.config.llm.provider
-        self.model_name = model_name
-        self.rag_pipeline = None
+    def __init__(self, backend_url: str = None):
+        self.backend_url = backend_url or os.getenv('BACKEND_API_URL', 'http://localhost:8000')
+        self.session = requests.Session()
         
-    def initialize(self):
-        """Initialize the RAG pipeline."""
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict[str, Any]]:
+        """Make HTTP request to backend API."""
+        url = f"{self.backend_url}{endpoint}"
+        
         try:
-            # Update config with command line arguments if provided
-            if self.provider_type != self.config.llm.provider:
-                self.config.llm.provider = self.provider_type
-            
-            if self.model_name:
-                self.config.llm.llm_model_name = self.model_name
-            
-            # Create and initialize RAG pipeline
-            self.rag_pipeline = RAGPipeline(self.config)
-            self.rag_pipeline.initialize()
-            
-            logger.info("Initialized RAG pipeline", 
-                       provider=self.provider_type, 
-                       model=self.config.llm.llm_model_name)
-            
+            response = self.session.request(method, url, **kwargs)
+            response.raise_for_status()
+            return response.json() if response.content else None
+        except requests.exceptions.ConnectionError:
+            print(f"❌ Cannot connect to backend at {self.backend_url}")
+            print("💡 Make sure the FastAPI backend is running with: python -m core.main")
+            return None
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 503:
+                print("❌ Backend service not ready. Please wait for initialization to complete.")
+            else:
+                print(f"❌ HTTP Error: {e}")
+                if response.content:
+                    try:
+                        error_detail = response.json()
+                        print(f"   Details: {error_detail.get('detail', 'Unknown error')}")
+                    except:
+                        print(f"   Response: {response.text}")
+            return None
         except Exception as e:
-            logger.error("Failed to initialize RAG pipeline", error=str(e))
-            raise
+            print(f"❌ Request failed: {e}")
+            return None
+    
+    def check_backend_health(self) -> bool:
+        """Check if backend is healthy and ready."""
+        result = self._make_request('GET', '/health')
+        if result:
+            print(f"✅ Backend is healthy: {result.get('message', 'OK')}")
+            return True
+        return False
     
     def run(self):
         """Run the terminal RAG interface."""
         print("📚 StudyBot RAG Terminal")
         print("=" * 50)
-        print(f"LLM Provider: {self.provider_type}")
-        print(f"LLM Model: {self.model_name or self.config.llm.llm_model_name}")
-        print(f"Vector Store: {self.config.vectorstore.provider}")
-        print(f"Embeddings: {self.config.embedding.provider}")
+        print(f"Backend URL: {self.backend_url}")
         
         print("\nCommands:")
         print("  /upload [path]    - Upload document or enter path interactively")
@@ -94,18 +105,12 @@ class RAGTerminal:
         print("\nType your question to search the knowledge base!")
         print("=" * 50)
         
-        try:
-            self.initialize()
-        except Exception as e:
-            print(f"\n❌ Failed to initialize: {e}")
-            print("\nTips:")
-            print("1. Make sure you have set your API key in .env file")
-            print("2. For OpenAI: LLM__API_KEY=your_openai_api_key")
-            print("3. For Anthropic: LLM__API_KEY=your_anthropic_api_key")
-            print("4. For Ollama: Make sure Ollama is running locally")
+        # Check backend health
+        if not self.check_backend_health():
+            print("\n💡 To start the backend, run: python -m core.main")
             return
         
-        print("\n✅ RAG pipeline initialized successfully!")
+        print("\n✅ Backend connection established!")
         self.show_status()
         print("\n💡 Start by uploading some documents with /upload")
         
@@ -164,11 +169,14 @@ class RAGTerminal:
         print(f"📤 Uploading document: {path}")
         
         try:
-            success = self.rag_pipeline.add_document(path)
-            if success:
-                print(f"✅ Successfully added document: {path_obj.name}")
+            with open(path_obj, 'rb') as f:
+                files = {'file': (path_obj.name, f, 'application/octet-stream')}
+                result = self._make_request('POST', '/documents/upload', files=files)
+            
+            if result and result.get('success'):
+                print(f"✅ Successfully uploaded document: {path_obj.name}")
             else:
-                print(f"❌ Failed to add document: {path_obj.name}")
+                print(f"❌ Failed to upload document: {path_obj.name}")
         except Exception as e:
             print(f"❌ Error uploading document: {e}")
     
@@ -188,8 +196,10 @@ class RAGTerminal:
         print(f"📤 Adding web page: {url}")
         
         try:
-            success = self.rag_pipeline.add_document(url)
-            if success:
+            data = {'source': url}
+            result = self._make_request('POST', '/documents/', json=data)
+            
+            if result and result.get('success'):
                 print(f"✅ Successfully added web page")
             else:
                 print(f"❌ Failed to add web page")
@@ -215,8 +225,10 @@ class RAGTerminal:
         print("📤 Adding text to knowledge base...")
         
         try:
-            success = self.rag_pipeline.add_text(text)
-            if success:
+            data = {'text': text}
+            result = self._make_request('POST', '/documents/text', json=data)
+            
+            if result and result.get('success'):
                 print("✅ Successfully added text")
             else:
                 print("❌ Failed to add text")
@@ -228,40 +240,54 @@ class RAGTerminal:
         print("\n🔍 Searching knowledge base...")
         
         try:
-            answer = self.rag_pipeline.query(question)
-            print(f"\n🤖 Answer:")
-            print("-" * 40)
-            print(answer)
-            print("-" * 40)
+            data = {'question': question}
+            result = self._make_request('POST', '/rag/query', json=data)
+            
+            if result:
+                answer = result.get('answer', 'No answer generated')
+                processing_time = result.get('processing_time_ms', 0)
+                
+                print(f"\n🤖 Answer:")
+                print("-" * 40)
+                print(answer)
+                print("-" * 40)
+                if processing_time:
+                    print(f"⏱️  Processing time: {processing_time:.1f}ms")
+            else:
+                print("❌ Failed to get answer from backend")
         except Exception as e:
             print(f"❌ Error processing query: {e}")
     
     def show_status(self):
         """Show knowledge base status."""
         try:
-            status = self.rag_pipeline.get_status()
+            result = self._make_request('GET', '/status')
             
-            print("\n📊 Knowledge Base Status:")
-            print("-" * 30)
-            print(f"Initialized: {'✅' if status['initialized'] else '❌'}")
-            
-            if status['initialized']:
-                components = status['components']
-                print(f"Embedding Provider: {'✅' if components['embedding_provider'] else '❌'}")
-                print(f"Vector Store: {'✅' if components['vector_store'] else '❌'}")
-                print(f"LLM Manager: {'✅' if components['llm_manager'] else '❌'}")
+            if result:
+                print("\n📊 Backend Status:")
+                print("-" * 30)
+                print(f"API Status: {'✅' if result.get('api_status') == 'running' else '❌'}")
                 
-                config = status['config']
-                print(f"\nConfiguration:")
-                print(f"  LLM: {config['llm_provider']} ({config['llm_model']})")
-                print(f"  Embeddings: {config['embedding_provider']} ({config['embedding_model']})")
-                print(f"  Vector Store: {config['vector_store']}")
+                if 'initialized' in result:
+                    print(f"RAG Pipeline: {'✅' if result['initialized'] else '❌'}")
                 
-                if 'vector_store_stats' in status:
-                    stats = status['vector_store_stats']
-                    print(f"\nVector Store:")
-                    print(f"  Type: {stats.get('type', 'Unknown')}")
-                    print(f"  Initialized: {'✅' if stats.get('initialized', False) else '❌'}")
+                if 'components' in result:
+                    components = result['components']
+                    print(f"Embedding Provider: {'✅' if components.get('embedding_provider') else '❌'}")
+                    print(f"Vector Store: {'✅' if components.get('vector_store') else '❌'}")
+                    print(f"LLM Manager: {'✅' if components.get('llm_manager') else '❌'}")
+                
+                if 'config' in result:
+                    config = result['config']
+                    print(f"\nConfiguration:")
+                    print(f"  LLM: {config.get('llm_provider', 'Unknown')} ({config.get('llm_model', 'Unknown')})")
+                    print(f"  Embeddings: {config.get('embedding_provider', 'Unknown')} ({config.get('embedding_model', 'Unknown')})")
+                    print(f"  Vector Store: {config.get('vector_store', 'Unknown')}")
+                
+                # Get document count
+                docs_result = self._make_request('GET', '/documents/')
+                if docs_result:
+                    print(f"\nDocuments: {docs_result.get('total_count', 0)} documents in knowledge base")
             
         except Exception as e:
             print(f"❌ Error getting status: {e}")
@@ -274,8 +300,8 @@ class RAGTerminal:
             return
         
         try:
-            success = self.rag_pipeline.clear_knowledge_base()
-            if success:
+            result = self._make_request('POST', '/documents/clear')
+            if result is not None:  # 204 status code returns None
                 print("✅ Knowledge base cleared")
             else:
                 print("❌ Failed to clear knowledge base")
@@ -297,14 +323,15 @@ class RAGTerminal:
         print("  - Then ask questions about the documents")
         print("  - The system will search and provide answers based on your documents")
         print("  - Supported formats: PDF, Word, Text, Web pages")
+        print(f"  - Backend URL: {self.backend_url}")
 
 
 def main():
     """Main function."""
     parser = argparse.ArgumentParser(description="Terminal RAG interface for StudyBot")
-    parser.add_argument("--provider", choices=["openai", "anthropic", "ollama", "google"], 
-                       default=None, help="LLM provider to use (defaults to .env setting)")
-    parser.add_argument("--model", help="Model name to use")
+    parser.add_argument("--backend-url", 
+                       default=os.getenv('BACKEND_API_URL', 'http://localhost:8000'),
+                       help="Backend API URL (defaults to BACKEND_API_URL env var or localhost:8000)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     
     args = parser.parse_args()
@@ -314,12 +341,8 @@ def main():
         import logging
         logging.getLogger().setLevel(logging.DEBUG)
     
-    # Get config to determine default provider
-    config = get_config()
-    provider = args.provider or config.llm.provider
-    
     # Create and run RAG interface
-    rag = RAGTerminal(provider_type=provider, model_name=args.model)
+    rag = RAGTerminal(backend_url=args.backend_url)
     rag.run()
 
 

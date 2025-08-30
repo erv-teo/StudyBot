@@ -114,7 +114,7 @@ class RAGPipeline:
             doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
             
             # Persist if supported
-            self._vector_store.persist()
+            self._vector_manager.vector_store.persist()
             
             self.logger.info(
                 "Successfully added document",
@@ -154,7 +154,7 @@ class RAGPipeline:
             processed_chunks = self._chunk_processor.process_chunks(chunks)
             
             doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
-            self._vector_store.persist()
+            self._vector_manager.vector_store.persist()
             
             self.logger.info("Added text to knowledge base", chunks=len(processed_chunks))
             return True
