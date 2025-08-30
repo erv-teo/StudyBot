@@ -264,16 +264,17 @@ Answer:""")
         try:
             self._ensure_initialized()
             
-            # Note: This is a simplified implementation
-            # In practice, you'd need to track document IDs for proper deletion
             self.logger.info("Clearing knowledge base")
             
-            # For now, we'll just return True since we can't easily reinitialize
-            # In a real implementation, you'd want to clear the vector store properly
-            self.logger.info("Knowledge base clear requested - implementation needed")
-            return True
+            # Clear all documents from the vector store
+            success = self._vector_manager.clear_all()
             
-            return True
+            if success:
+                self.logger.info("Successfully cleared knowledge base")
+            else:
+                self.logger.error("Failed to clear knowledge base")
+            
+            return success
             
         except Exception as e:
             self.logger.error("Failed to clear knowledge base", error=str(e))

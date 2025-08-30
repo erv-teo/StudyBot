@@ -103,6 +103,15 @@ class BaseVectorStore(ABC):
         """
         pass
     
+    @abstractmethod
+    def clear(self) -> bool:
+        """Clear all documents from the vector store.
+        
+        Returns:
+            True if successful
+        """
+        pass
+    
     def get_store(self) -> VectorStore:
         """Get the underlying vector store instance."""
         if self._store is None:
@@ -229,3 +238,17 @@ class VectorStoreManager:
                 "initialized": False,
                 "error": str(e)
             }
+
+    def clear_all(self) -> bool:
+        """Clear all documents from the vector store.
+        
+        Returns:
+            True if successful
+        """
+        try:
+            success = self.vector_store.clear()
+            self.logger.info("Cleared all documents from vector store")
+            return success
+        except Exception as e:
+            self.logger.error("Failed to clear vector store", error=str(e))
+            return False
