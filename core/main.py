@@ -3,6 +3,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
+import datetime
 from typing import Dict, Any
 
 from .config.settings import get_config
@@ -127,9 +128,38 @@ async def shutdown_event():
 
 
 @app.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> Dict[str, Any]:
     """Health check endpoint."""
-    return {"status": "healthy", "message": "StudyBot RAG API is running"}
+    try:
+        # Check if all components are initialized
+        rag_healthy = rag_pipeline is not None
+        chunk_manager_healthy = chunk_manager is not None
+        vector_store_healthy = chunk_manager is not None  # Simplified check
+        
+        overall_status = "healthy" if all([rag_healthy, chunk_manager_healthy, vector_store_healthy]) else "unhealthy"
+        
+        return {
+            "status": overall_status,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "version": "1.0.0",
+            "services": {
+                "rag_pipeline": rag_healthy,
+                "chunk_manager": chunk_manager_healthy,
+                "vector_store": vector_store_healthy
+            }
+        }
+    except Exception as e:
+        logger.error("Health check failed", error=str(e))
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "version": "1.0.0",
+            "services": {
+                "rag_pipeline": False,
+                "chunk_manager": False,
+                "vector_store": False
+            }
+        }
 
 
 @app.get("/status")

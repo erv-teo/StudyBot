@@ -217,3 +217,12 @@ data/vectorstore/
 data/raw/*
 !data/raw/sample_document_1.txt
 data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/package-lock.json
+frontend/pnpm-lock.yaml
+frontend/yarn.lock
+frontend/bun.lockb
