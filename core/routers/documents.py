@@ -104,6 +104,14 @@ async def upload_document(
             except json.JSONDecodeError:
                 raise HTTPException(status_code=400, detail="Invalid JSON metadata")
         
+        # Initialize metadata if None
+        if parsed_metadata is None:
+            parsed_metadata = {}
+        
+        # Add document name to metadata
+        parsed_metadata['original_filename'] = file.filename
+        parsed_metadata['content_type'] = file.content_type or 'application/octet-stream'
+        
         # Save uploaded file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
             content = await file.read()
@@ -113,13 +121,13 @@ async def upload_document(
         try:
             logger.info("Uploading document", filename=file.filename, size=len(content))
             
-            # Add document using the temporary file path
+            # Add document using the temporary file path with metadata including filename
             success = pipeline.add_document(temp_file_path, parsed_metadata)
             
             if success:
                 return DocumentResponse(
                     success=True,
-                    source=file.filename,
+                    source=file.filename,  # Use filename as source for display
                     message="Document uploaded and added successfully"
                 )
             else:
