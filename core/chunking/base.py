@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Any, Dict
 import structlog
+import uuid
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -122,9 +123,9 @@ class ChunkProcessor:
             else:
                 chunk.metadata["section"] = "end"
             
-            # Add chunk metadata
+            # Add chunk metadata with unique UUID
             chunk.metadata.update({
-                "chunk_id": f"chunk_{i}",
+                "chunk_id": str(uuid.uuid4()),  # Unique identifier for each chunk
                 "chunk_index": i,
                 "total_chunks": total_chunks,
                 "chunk_size": len(chunk.page_content),
@@ -153,7 +154,7 @@ class ChunkProcessor:
             
             chunk.metadata.update({
                 "section": section,
-                "chunk_id": f"chunk_{i}",
+                "chunk_id": str(uuid.uuid4()),  # Unique identifier for each chunk
                 "chunk_index": i,
                 "chunk_size": len(chunk.page_content),
             })

@@ -163,7 +163,7 @@ function DocumentCard({ document, isExpanded, onToggle, onChunkClick }: Document
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Preview</Table.Th>
+                  <Table.Th>Content Preview</Table.Th>
                   <Table.Th>Length</Table.Th>
                   <Table.Th>Created</Table.Th>
                   <Table.Th style={{ width: 100 }}>Actions</Table.Th>

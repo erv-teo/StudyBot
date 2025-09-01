@@ -367,8 +367,9 @@ class ChunkManager:
             if not chunk_details:
                 raise ValueError(f"Chunk {chunk_id} not found")
             
-            # Create updated document
+            # Create updated document with PRESERVED chunk_id
             metadata = chunk_details['metadata'].copy()
+            metadata['chunk_id'] = chunk_id  # Explicitly preserve the chunk_id
             metadata['chunk_size'] = len(new_content)
             metadata['last_edited'] = datetime.now().isoformat()
             
@@ -379,13 +380,16 @@ class ChunkManager:
             updated_doc = Document(page_content=new_content, metadata=metadata)
             
             # Delete old chunk and add new one
-            # Note: This is a simplified approach - in production you'd want more atomic operations
+            old_embedding_id = chunk_details['embedding_id']
             self.delete_chunk(chunk_id)
             
             # Add updated chunk
-            self.vector_manager.add_documents_batch([updated_doc])
+            new_ids = self.vector_manager.add_documents_batch([updated_doc])
             
-            self.logger.info("Successfully edited chunk", chunk_id=chunk_id)
+            self.logger.info("Successfully edited chunk", 
+                            chunk_id=chunk_id,
+                            old_embedding_id=old_embedding_id,
+                            new_embedding_id=new_ids[0] if new_ids else 'unknown')
             return True
             
         except Exception as e:
