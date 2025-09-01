@@ -30,6 +30,9 @@ lxml
 # Telegram bot
 python-telegram-bot==21.5
 
+# Discord bot
+discord.py
+
 # Text processing
 tiktoken==0.7.0
 
