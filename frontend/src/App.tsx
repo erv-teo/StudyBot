@@ -1,4 +1,4 @@
-import { Container, Stack, Title, Text, SimpleGrid } from '@mantine/core';
+import { Container, Stack, Title, Text, Grid } from '@mantine/core';
 import { StatusCard } from './components/StatusCard';
 import { ConfigCard } from './components/ConfigCard';
 import { DocumentsTable } from './components/DocumentsTable';
@@ -14,14 +14,14 @@ export default function App() {
           </Text>
         </Stack>
 
-        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
-          <div style={{ gridColumn: 'span 2' }}>
+        <Grid gutter="lg">
+          <Grid.Col span={{ base: 12, lg: 5 }}>
             <StatusCard />
-          </div>
-          <div>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, lg: 7 }}>
             <ConfigCard />
-          </div>
-        </SimpleGrid>
+          </Grid.Col>
+        </Grid>
 
         <DocumentsTable />
       </Stack>

@@ -1,4 +1,4 @@
-import { Card, Text, Group, Badge, Stack, Flex } from '@mantine/core';
+import { Card, Text, Group, Badge, Stack, Flex, Box } from '@mantine/core';
 import { useHealthStatus } from '../hooks/useApi';
 import { IconActivity, IconCheck, IconX, IconAlertCircle } from '@tabler/icons-react';
 
@@ -7,17 +7,17 @@ export function StatusCard() {
 
   if (loading) {
     return (
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
+      <Card shadow="sm" padding="lg" radius="md" withBorder h="100%">
         <Group>
           <IconActivity size={20} style={{ animation: 'spin 1s linear infinite' }} />
-          <div>
+          <Stack gap={0}>
             <Text fw={500} size="lg">Bot Status</Text>
             <Text size="sm" c="dimmed">Checking system health...</Text>
-          </div>
+          </Stack>
         </Group>
         <Stack gap="xs" mt="md">
-          <div style={{ height: 16, backgroundColor: '#f1f3f5', borderRadius: 4 }} />
-          <div style={{ height: 16, backgroundColor: '#f1f3f5', borderRadius: 4, width: '75%' }} />
+          <Box h={16} bg="#f1f3f5" style={{ borderRadius: 4 }} />
+          <Box h={16} bg="#f1f3f5" style={{ borderRadius: 4, width: '75%' }} />
         </Stack>
       </Card>
     );
@@ -25,13 +25,13 @@ export function StatusCard() {
 
   if (error) {
     return (
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
+      <Card shadow="sm" padding="lg" radius="md" withBorder h="100%">
         <Group>
           <IconX size={20} color="red" />
-          <div>
+          <Stack gap={0}>
             <Text fw={500} size="lg" c="red">Bot Status</Text>
             <Text size="sm" c="dimmed">Unable to connect to bot</Text>
-          </div>
+          </Stack>
         </Group>
         <Text size="sm" c="red" mt="md">{error}</Text>
       </Card>
@@ -42,19 +42,19 @@ export function StatusCard() {
   const services = status?.services;
 
   return (
-    <Card shadow="sm" padding="lg" radius="md" withBorder>
+    <Card shadow="sm" padding="lg" radius="md" withBorder h="100%">
       <Group>
         {isHealthy ? (
           <IconCheck size={20} color="green" />
         ) : (
           <IconAlertCircle size={20} color="orange" />
         )}
-        <div>
+        <Stack gap={0}>
           <Text fw={500} size="lg">Bot Status</Text>
           <Text size="sm" c="dimmed">
             {isHealthy ? 'All systems operational' : 'Some services may be affected'}
           </Text>
-        </div>
+        </Stack>
       </Group>
 
       <Stack gap="md" mt="md">

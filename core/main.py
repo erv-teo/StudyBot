@@ -188,11 +188,12 @@ async def get_status() -> Dict[str, Any]:
 
 
 # Import and include routers
-from core.routers import rag, chunks, documents
+from core.routers import rag, chunks, documents, config
 
 app.include_router(rag.router, prefix="/rag", tags=["RAG"])
 app.include_router(chunks.router, prefix="/chunks", tags=["Chunks"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
+app.include_router(config.router, prefix="/config", tags=["Configuration"])
 
 
 if __name__ == "__main__":
