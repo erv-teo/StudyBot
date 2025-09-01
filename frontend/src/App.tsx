@@ -2,6 +2,7 @@ import { Container, Stack, Title, Text, Grid } from '@mantine/core';
 import { StatusCard } from './components/StatusCard';
 import { ConfigCard } from './components/ConfigCard';
 import { DocumentsTable } from './components/DocumentsTable';
+import { TestingCard } from './components/TestingCard';
 
 export default function App() {
   return (
@@ -24,6 +25,8 @@ export default function App() {
         </Grid>
 
         <DocumentsTable />
+        
+        <TestingCard />
       </Stack>
     </Container>
   );

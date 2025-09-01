@@ -82,6 +82,20 @@ export interface DeleteResponse {
   message: string;
 }
 
+export interface RAGQueryRequest {
+  question: string;
+  k?: number;
+  score_threshold?: number;
+  metadata_filter?: Record<string, any>;
+}
+
+export interface RAGQueryResponse {
+  answer: string;
+  question: string;
+  retrieved_docs_count?: number;
+  processing_time_ms?: number;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -164,6 +178,14 @@ class ApiClient {
 
   async getDocumentChunks(docId: string): Promise<ChunkListResponse> {
     return this.request<ChunkListResponse>(`/chunks/document/${docId}`);
+  }
+
+  // RAG Query
+  async queryRAG(request: RAGQueryRequest): Promise<RAGQueryResponse> {
+    return this.request<RAGQueryResponse>('/rag/query', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 }
 
