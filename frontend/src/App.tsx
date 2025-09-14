@@ -1,0 +1,33 @@
+import { Container, Stack, Title, Text, Grid } from '@mantine/core';
+import { StatusCard } from './components/StatusCard';
+import { ConfigCard } from './components/ConfigCard';
+import { DocumentsTable } from './components/DocumentsTable';
+import { TestingCard } from './components/TestingCard';
+
+export default function App() {
+  return (
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Stack gap="xs">
+          <Title order={1}>StudyBot Dashboard</Title>
+          <Text c="dimmed" size="lg">
+            Manage your RAG system documents and chunks
+          </Text>
+        </Stack>
+
+        <Grid gutter="lg">
+          <Grid.Col span={{ base: 12, lg: 5 }}>
+            <StatusCard />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, lg: 7 }}>
+            <ConfigCard />
+          </Grid.Col>
+        </Grid>
+
+        <DocumentsTable />
+        
+        <TestingCard />
+      </Stack>
+    </Container>
+  );
+}

@@ -22,76 +22,60 @@ logger = structlog.get_logger(__name__)
 class RAGPipeline:
     """Main RAG pipeline that orchestrates all components."""
     
-    def __init__(self, config: Optional[StudyBotConfig] = None):
+    def __init__(self, 
+                 config: Optional[StudyBotConfig] = None,
+                 vector_manager: Optional[VectorStoreManager] = None,
+                 llm_manager: Optional[LLMManager] = None,
+                 document_processor: Optional[DocumentProcessor] = None,
+                 chunk_processor: Optional[ChunkProcessor] = None,
+                 text_splitter: Optional = None,
+                 document_store: Optional = None):
+        """
+        Initialize RAG pipeline with pre-initialized components.
+        
+        Args:
+            config: Configuration object
+            vector_manager: Pre-initialized vector store manager
+            llm_manager: Pre-initialized LLM manager
+            document_processor: Pre-initialized document processor
+            chunk_processor: Pre-initialized chunk processor
+            text_splitter: Pre-initialized text splitter
+        """
         self.config = config or get_config()
         self.logger = structlog.get_logger(self.__class__.__name__)
         
-        # Initialize components
-        self._embedding_provider = None
-        self._vector_store = None
-        self._vector_manager = None
-        self._llm_manager = None
-        self._document_processor = None
-        self._chunk_processor = None
-        self._text_splitter = None
+        # Use pre-initialized components if provided
+        self._vector_manager = vector_manager
+        self._llm_manager = llm_manager
+        self._document_processor = document_processor
+        self._chunk_processor = chunk_processor
+        self._text_splitter = text_splitter
+        self._document_store = document_store
         
         # Track initialization
-        self._initialized = False
-    
-    def initialize(self) -> None:
-        """Initialize all RAG components."""
-        if self._initialized:
-            return
+        self._initialized = self._check_initialization()
         
-        try:
-            self.logger.info("Initializing RAG pipeline...")
-            
-            # Initialize embedding provider
-            self._embedding_provider = EmbeddingProviderFactory.create_provider(
-                self.config.embedding.provider,
-                model_name=self.config.embedding.embedding_model_name,
-                model_kwargs=self.config.embedding.model_kwargs,
-                encode_kwargs=self.config.embedding.encode_kwargs
-            )
-            
-            # Initialize vector store
-            embeddings = self._embedding_provider.get_embeddings()
-            self._vector_store = VectorStoreFactory.create_store(
-                self.config.vectorstore.provider,
-                embeddings,
-                persist_directory=self.config.vectorstore.persist_directory,
-                collection_name=self.config.vectorstore.collection_name
-            )
-            
-            # Initialize vector store manager
-            self._vector_manager = VectorStoreManager(self._vector_store)
-            
-            # Initialize LLM
-            llm_provider = LLMProviderFactory.create_provider(
-                self.config.llm.provider,
-                model_name=self.config.llm.llm_model_name,
-                api_key=self.config.llm.api_key,
-                temperature=self.config.llm.temperature,
-                max_tokens=self.config.llm.max_tokens,
-                base_url=self.config.llm.base_url
-            )
-            self._llm_manager = LLMManager(llm_provider)
-            
-            # Initialize document processing components
-            self._document_processor = DocumentProcessor()
-            self._chunk_processor = ChunkProcessor()
-            self._text_splitter = TextSplitterFactory.create_splitter(
-                "recursive",
-                chunk_size=self.config.chunking.chunk_size,
-                chunk_overlap=self.config.chunking.chunk_overlap
-            )
-            
-            self._initialized = True
-            self.logger.info("RAG pipeline initialized successfully")
-            
-        except Exception as e:
-            self.logger.error("Failed to initialize RAG pipeline", error=str(e))
-            raise
+        if self._initialized:
+            self.logger.info("RAG pipeline initialized with pre-configured components")
+        else:
+            self.logger.warning("RAG pipeline initialized with missing components - some operations may fail")
+    
+    def _check_initialization(self) -> bool:
+        """Check if all required components are available."""
+        required_components = [
+            self._vector_manager,
+            self._llm_manager,
+            self._document_processor,
+            self._chunk_processor,
+            self._text_splitter,
+            self._document_store
+        ]
+        return all(component is not None for component in required_components)
+    
+    def _ensure_initialized(self) -> None:
+        """Ensure pipeline is properly initialized before operations."""
+        if not self._initialized:
+            raise RuntimeError("RAG pipeline not properly initialized. All components must be provided.")
     
     def add_document(self, source: str, metadata: Optional[Dict[str, Any]] = None) -> bool:
         """Add a document to the knowledge base.
@@ -104,9 +88,20 @@ class RAGPipeline:
             True if successful
         """
         try:
-            self.initialize()
+            self._ensure_initialized()
             
             self.logger.info("Adding document to knowledge base", source=source)
+            
+            # Create document record
+            original_filename = metadata.get('original_filename') if metadata else None
+            content_type = metadata.get('content_type') if metadata else None
+            
+            doc_id = self._document_store.create_document(
+                source=source,
+                original_filename=original_filename,
+                content_type=content_type,
+                metadata=metadata
+            )
             
             # Load document
             loader_factory = DocumentLoaderFactory()
@@ -116,10 +111,13 @@ class RAGPipeline:
                 self.logger.warning("No documents loaded", source=source)
                 return False
             
-            # Process documents
-            if metadata:
-                for doc in documents:
-                    doc.metadata.update(metadata)
+            # Process documents and add document ID to metadata
+            if metadata is None:
+                metadata = {}
+            metadata['doc_id'] = doc_id
+            
+            for doc in documents:
+                doc.metadata.update(metadata)
             
             processed_docs = self._document_processor.process(documents, metadata)
             
@@ -130,16 +128,21 @@ class RAGPipeline:
             processed_chunks = self._chunk_processor.process_chunks(chunks)
             
             # Add to vector store
-            doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
+            vector_doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
+            
+            # Update document stats
+            total_chars = sum(len(chunk.page_content) for chunk in processed_chunks)
+            self._document_store.update_document_stats(doc_id, len(processed_chunks), total_chars)
             
             # Persist if supported
-            self._vector_store.persist()
+            self._vector_manager.vector_store.persist()
             
             self.logger.info(
                 "Successfully added document",
+                doc_id=doc_id,
                 source=source,
                 chunks=len(processed_chunks),
-                doc_ids=len(doc_ids)
+                vector_doc_ids=len(vector_doc_ids)
             )
             
             return True
@@ -159,7 +162,7 @@ class RAGPipeline:
             True if successful
         """
         try:
-            self.initialize()
+            self._ensure_initialized()
             
             # Create document from text
             doc_metadata = metadata or {}
@@ -173,7 +176,7 @@ class RAGPipeline:
             processed_chunks = self._chunk_processor.process_chunks(chunks)
             
             doc_ids = self._vector_manager.add_documents_batch(processed_chunks)
-            self._vector_store.persist()
+            self._vector_manager.vector_store.persist()
             
             self.logger.info("Added text to knowledge base", chunks=len(processed_chunks))
             return True
@@ -193,7 +196,7 @@ class RAGPipeline:
             Generated answer
         """
         try:
-            self.initialize()
+            self._ensure_initialized()
             
             self.logger.info("Processing query", question_length=len(question))
             
@@ -281,23 +284,19 @@ Answer:""")
             True if successful
         """
         try:
-            self.initialize()
+            self._ensure_initialized()
             
-            # Note: This is a simplified implementation
-            # In practice, you'd need to track document IDs for proper deletion
             self.logger.info("Clearing knowledge base")
             
-            # Re-initialize vector store (effectively clearing it)
-            embeddings = self._embedding_provider.get_embeddings()
-            self._vector_store = VectorStoreFactory.create_store(
-                self.config.vectorstore.provider,
-                embeddings,
-                persist_directory=self.config.vectorstore.persist_directory,
-                collection_name=self.config.vectorstore.collection_name + "_new"
-            )
-            self._vector_manager = VectorStoreManager(self._vector_store)
+            # Clear all documents from the vector store
+            success = self._vector_manager.clear_all()
             
-            return True
+            if success:
+                self.logger.info("Successfully cleared knowledge base")
+            else:
+                self.logger.error("Failed to clear knowledge base")
+            
+            return success
             
         except Exception as e:
             self.logger.error("Failed to clear knowledge base", error=str(e))
@@ -313,9 +312,11 @@ Answer:""")
             status = {
                 "initialized": self._initialized,
                 "components": {
-                    "embedding_provider": self._embedding_provider is not None,
-                    "vector_store": self._vector_store is not None,
+                    "vector_manager": self._vector_manager is not None,
                     "llm_manager": self._llm_manager is not None,
+                    "document_processor": self._document_processor is not None,
+                    "chunk_processor": self._chunk_processor is not None,
+                    "text_splitter": self._text_splitter is not None,
                 },
                 "config": {
                     "embedding_provider": self.config.embedding.provider,
@@ -347,6 +348,7 @@ Answer:""")
         Returns:
             Configured RAG pipeline
         """
+        # This method is kept for backward compatibility but now requires
+        # components to be initialized externally
         pipeline = cls(config)
-        pipeline.initialize()
         return pipeline

@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -200,6 +199,7 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+/.cursor
 
 # Marimo
 marimo/_static/
@@ -216,3 +216,12 @@ data/vectorstore/
 data/raw/*
 !data/raw/sample_document_1.txt
 data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/package-lock.json
+frontend/pnpm-lock.yaml
+frontend/yarn.lock
+frontend/bun.lockb

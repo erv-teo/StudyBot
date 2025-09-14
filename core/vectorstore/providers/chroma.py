@@ -146,8 +146,9 @@ class ChromaVectorStore(BaseVectorStore):
         try:
             store = self.get_store()
             if store is not None:
-                store.save_local(self.persist_directory, self.collection_name)
-                self.logger.info("Persisted ChromaDB vector store", 
+                # ChromaDB automatically persists when initialized with persist_directory
+                # No explicit persist call needed
+                self.logger.debug("ChromaDB automatically persists data", 
                                 persist_directory=self.persist_directory,
                                 collection_name=self.collection_name)
             else:

@@ -2,6 +2,53 @@
 
 A modular RAG (Retrieval Augmented Generation) system for question-answering based on document collections. Upload documents and ask questions about them using advanced AI.
 
+## 🛠️ Development
+
+The system uses a modular architecture:
+
+```
+StudyBot/
+├── core/                 # Platform-agnostic RAG engine
+│   ├── config/          # Configuration management
+│   ├── rag/             # RAG pipeline orchestration
+│   ├── llm/             # LLM providers (OpenAI, Anthropic, Ollama)
+│   ├── vectorstore/     # Vector stores (Chroma, FAISS, In-memory)
+│   ├── chunking/        # Text splitters & embeddings
+│   ├── ingestion/       # Document loaders (PDF, Web, Text, etc.)
+│   ├── routers/         # FastAPI route handlers
+│   ├── main.py          # FastAPI application entry point
+│   ├── api_document.md  # API documentation and endpoints
+│   └── __init__.py      # Core package initialization
+├── chat/                # Platform-specific interfaces
+│   ├── rag_terminal.py  # Terminal interface
+│   ├── telegram_bot.py  # Telegram bot interface
+│   ├── discord_bot.py  # Discord bot interface
+│   └── __init__.py      # Chat package initialization
+├── data/                # Data storage
+│   ├── raw/             # Raw document storage
+│   └── vectorstore/     # Vector database storage
+├── venv/                # Virtual environment
+├── requirements.txt     # Python dependencies
+└── README.md           # This file
+```
+
+### API Documentation
+
+Once the backend is running, you can access:
+
+- Interactive API docs: http://localhost:8000/docs
+- Alternative docs: http://localhost:8000/redoc
+
+**Key Components:**
+
+- `core/config/` - Configuration management
+- `core/ingestion/` - Document loading (PDF, Web, Text, etc.)
+- `core/chunking/` - Text splitting & embeddings
+- `core/vectorstore/` - Vector databases (Chroma, FAISS)
+- `core/llm/` - LLM providers (OpenAI, Anthropic, Ollama)
+- `core/rag/` - RAG pipeline orchestration
+- `chat/` - Platform-specific interfaces (Terminal, Telegram, WhatsApp)
+
 ## 🚀 Quick Start
 
 ### 1. Setup Environment
@@ -42,7 +89,23 @@ LLM__LLM_MODEL_NAME=gpt-3.5-turbo
 TELEGRAM_BOT_KEY=mock_api_key
 ```
 
-### 3. Start the RAG Terminal
+### 3. Start the Backend API Server
+
+```bash
+# Start the FastAPI backend server with uvicorn
+uvicorn core.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+This will initialize multiple services including:
+
+- RAG Pipeline
+- Vector Store Manager
+- LLM Provider
+- Document Processor
+- Chunk Manager
+- Embedding Provider
+
+### 4. Start the RAG Terminal (Optional)
 
 ```bash
 python3 chat/rag_terminal.py
@@ -145,39 +208,8 @@ LLM__BASE_URL=http://localhost:11434
 - **Study Helper**: Upload textbooks and ask concept questions
 - **Meeting Analysis**: Upload transcripts and extract action items
 
-## 🛠️ Development
-
-The system uses a modular architecture:
-
-```
-StudyBot/
-├── core/                 # Platform-agnostic RAG engine
-│   ├── config/          # Configuration management
-│   ├── rag/             # RAG pipeline orchestration
-│   ├── llm/             # LLM providers (OpenAI, Anthropic, Ollama)
-│   ├── vectorstore/     # Vector stores (Chroma, FAISS, In-memory)
-│   ├── chunking/        # Text splitters & embeddings
-│   └── ingestion/       # Document loaders (PDF, Web, Text, etc.)
-├── chat/                # Platform-specific interfaces
-│   ├── rag_terminal.py  # Terminal interface
-│   ├── telegram.py      # Future: Telegram bot
-│   └── whatsapp.py      # Future: WhatsApp bot
-└── requirements.txt
-```
-
-**Key Components:**
-
-- `core/config/` - Configuration management
-- `core/ingestion/` - Document loading (PDF, Web, Text, etc.)
-- `core/chunking/` - Text splitting & embeddings
-- `core/vectorstore/` - Vector databases (Chroma, FAISS)
-- `core/llm/` - LLM providers (OpenAI, Anthropic, Ollama)
-- `core/rag/` - RAG pipeline orchestration
-- `chat/` - Platform-specific interfaces (Terminal, Telegram, WhatsApp)
-
 ## 📋 Requirements
 
 - Python 3.9+
 - OpenAI API key (for GPT models) or other LLM provider
 - ~500MB for sentence-transformer models (downloaded automatically)
-
