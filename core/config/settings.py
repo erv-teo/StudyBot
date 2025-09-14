@@ -59,6 +59,12 @@ class TelegramConfig(BaseSettings):
     polling: bool = Field(default=True, description="Use polling instead of webhooks")
 
 
+class DiscordConfig(BaseSettings):
+    """Configuration for Discord bot."""
+    
+    bot_token: Optional[str] = Field(default=None, description="Discord bot token")
+
+
 class RAGConfig(BaseSettings):
     """Configuration for RAG pipeline."""
     
@@ -76,6 +82,7 @@ class StudyBotConfig(BaseSettings):
     vectorstore: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     telegram: TelegramConfig = Field(default_factory=TelegramConfig)
+    discord: DiscordConfig = Field(default_factory=DiscordConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     
     # General settings
